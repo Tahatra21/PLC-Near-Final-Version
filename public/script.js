@@ -7,7 +7,41 @@ class ProductLifecycleManager {
         this.currentEditId = null;
         this.charts = {};
         this.currentTab = 'overview';
-        this.init();
+        // Tunggu DOM selesai dimuat sebelum inisialisasi
+        document.addEventListener('DOMContentLoaded', () => {
+            this.init();
+            this.initializeEventListeners();
+        });
+    }
+
+    initializeEventListeners() {
+        // Event listener untuk file input
+        const materialAttachment = document.getElementById('materialAttachment');
+        const contractAttachment = document.getElementById('contractAttachment');
+        const materialBrowseBtn = document.getElementById('materialBrowseBtn');
+        const contractBrowseBtn = document.getElementById('contractBrowseBtn');
+
+        if (materialAttachment && materialBrowseBtn) {
+            materialBrowseBtn.addEventListener('click', () => {
+                materialAttachment.click();
+            });
+
+            materialAttachment.addEventListener('change', (e) => {
+                const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+                document.getElementById('materialFileName').textContent = fileName;
+            });
+        }
+
+        if (contractAttachment && contractBrowseBtn) {
+            contractBrowseBtn.addEventListener('click', () => {
+                contractAttachment.click();
+            });
+
+            contractAttachment.addEventListener('change', (e) => {
+                const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+                document.getElementById('contractFileName').textContent = fileName;
+            });
+        }
     }
 
     async init() {
@@ -75,6 +109,7 @@ class ProductLifecycleManager {
             });
         }
     }
+
 
     bindEvents() {
         // Modal controls
@@ -806,7 +841,15 @@ class ProductLifecycleManager {
         grid.innerHTML = productsToRender.map(product => {
             // Lowercase segment for CSS class
             const segmentClass = product.segment ? product.segment.toLowerCase().replace(/\s+/g, '') : '';
-            
+
+            // Attachment links
+            const materialAttachment = product.material_attachment 
+                ? `<a href="${product.material_attachment}" target="_blank" class="attachment-link"><i class="fas fa-file-pdf"></i> Materi Product</a>` 
+                : `<span class="no-attachment"><i class="fas fa-times-circle"></i> No material attachment</span>`;
+            const contractAttachment = product.contract_attachment 
+                ? `<a href="${product.contract_attachment}" target="_blank" class="attachment-link"><i class="fas fa-file-contract"></i> Kontrak Product</a>` 
+                : `<span class="no-attachment"><i class="fas fa-times-circle"></i> No contract attachment</span>`;
+
             return `
             <div class="product-card" data-aos="fade-up">
                 <div class="product-header">
@@ -833,6 +876,11 @@ class ProductLifecycleManager {
                         <strong>Last Updated:</strong><br>
                         ${product.updated_at ? new Date(product.updated_at).toLocaleDateString() : 'Unknown'}
                     </div>
+                </div>
+
+                <div class="product-attachments">
+                    <div>${materialAttachment}</div>
+                    <div>${contractAttachment}</div>
                 </div>
                 
                 <div class="product-actions">
@@ -1074,6 +1122,81 @@ class ProductLifecycleManager {
         document.getElementById('productSegment').value = product.segment || '';
         document.getElementById('productLifecycle').value = product.lifecycle_stage;
         document.getElementById('productLaunchDate').value = product.launch_date ? product.launch_date.split('T')[0] : '';
+
+        // Reset file inputs
+        document.getElementById('materialFileName').textContent = 'No file selected';
+        document.getElementById('contractFileName').textContent = 'No file selected';
+
+        // Tampilkan preview attachment jika ada
+        const materialPreview = document.getElementById('materialAttachmentPreview');
+        const contractPreview = document.getElementById('contractAttachmentPreview');
+
+        if (materialPreview) {
+            if (product.material_attachment) {
+                materialPreview.innerHTML = `
+                    <div class="attachment-info">
+                        <i class="fas fa-file-pdf"></i>
+                        <a href="${product.material_attachment}" target="_blank">View Current Material</a>
+                        <button type="button" class="btn btn-small btn-danger" id="deleteMaterialBtn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                // Event listener untuk tombol delete
+                document.getElementById('deleteMaterialBtn').addEventListener('click', () => {
+                    this.deleteAttachment(product.id, 'material');
+                });
+            } else {
+                materialPreview.innerHTML = '';
+            }
+        }
+
+        if (contractPreview) {
+            if (product.contract_attachment) {
+                contractPreview.innerHTML = `
+                    <div class="attachment-info">
+                        <i class="fas fa-file-pdf"></i>
+                        <a href="${product.contract_attachment}" target="_blank">View Current Contract</a>
+                        <button type="button" class="btn btn-small btn-danger" id="deleteContractBtn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                // Event listener untuk tombol delete
+                document.getElementById('deleteContractBtn').addEventListener('click', () => {
+                    this.deleteAttachment(product.id, 'contract');
+                });
+            } else {
+                contractPreview.innerHTML = '';
+            }
+        }
+    }
+
+    async deleteAttachment(productId, type) {
+        if (!confirm(`Are you sure you want to delete this ${type} attachment?`)) return;
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/products/${productId}/${type}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (!response.ok) throw new Error(`Failed to delete ${type} attachment`);
+            // Refresh product data
+            const productResponse = await fetch(`/api/products/${productId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (!productResponse.ok) throw new Error('Failed to fetch updated product');
+            const product = await productResponse.json();
+            this.populateForm(product);
+            this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} attachment deleted successfully`, 'success');
+        } catch (error) {
+            console.error(`Error deleting ${type} attachment:`, error);
+            this.showNotification(`Failed to delete ${type} attachment`, 'error');
+        }
     }
 
     async handleFormSubmit(e) {
@@ -1091,6 +1214,8 @@ class ProductLifecycleManager {
         try {
             const token = localStorage.getItem('token');
             let response;
+            let productId;
+            // Simpan data produk terlebih dahulu
             if (this.currentEditId) {
                 response = await fetch(`/api/products/${this.currentEditId}`, {
                     method: 'PUT',
@@ -1100,6 +1225,7 @@ class ProductLifecycleManager {
                     },
                     body: JSON.stringify(formData)
                 });
+                productId = this.currentEditId;
             } else {
                 response = await fetch('/api/products', {
                     method: 'POST',
@@ -1109,9 +1235,45 @@ class ProductLifecycleManager {
                     },
                     body: JSON.stringify(formData)
                 });
+                const data = await response.json();
+                productId = data.id;
             }
 
             if (!response.ok) throw new Error('Failed to save product');
+
+            // Upload material attachment jika ada
+            const materialFile = document.getElementById('materialAttachment').files[0];
+            if (materialFile) {
+                const materialFormData = new FormData();
+                materialFormData.append('material', materialFile);
+                const materialResponse = await fetch(`/api/products/${productId}/material`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: materialFormData
+                });
+                if (!materialResponse.ok) {
+                    console.error('Failed to upload material attachment');
+                }
+            }
+
+            // Upload contract attachment jika ada
+            const contractFile = document.getElementById('contractAttachment').files[0];
+            if (contractFile) {
+                const contractFormData = new FormData();
+                contractFormData.append('contract', contractFile);
+                const contractResponse = await fetch(`/api/products/${productId}/contract`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: contractFormData
+                });
+                if (!contractResponse.ok) {
+                    console.error('Failed to upload contract attachment');
+                }
+            }
 
             this.closeModal();
             this.loadProducts();

@@ -69,3 +69,7 @@ INSERT INTO products (name, description, category, segment, lifecycle_stage, pri
 ('Power Generation System', 'Advanced power generation monitoring', 'Energy', 'Pembangkitan', 'Growth', 50000.00, '2022-05-15', 1),
 ('Distribution Network Tool', 'Smart grid distribution management', 'Infrastructure', 'Distribusi', 'Maturity', 30000.00, '2021-08-20', 2),
 ('Transmission Monitor', 'High voltage transmission monitoring', 'Monitoring', 'Transmisi', 'Growth', 75000.00, '2023-03-10', 1);
+
+ALTER TABLE products 
+ADD COLUMN material_attachment VARCHAR(255),
+ADD COLUMN contract_attachment VARCHAR(255);

@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-// Add this line to import the middleware
 const { authenticateToken } = require('../middleware/auth');
+const { uploadMaterial, uploadContract } = require('../middleware/upload');
+const path = require('path');
+const fs = require('fs-extra');
 
 // Get all products
 router.get('/', async (req, res) => {
@@ -213,6 +215,158 @@ router.get('/:id', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Upload material attachment
+router.post('/:id/material', authenticateToken, uploadMaterial.single('material'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Jika tidak ada file yang diupload
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        
+        // Dapatkan produk saat ini untuk menghapus file lama jika ada
+        const currentProduct = await pool.query('SELECT material_attachment FROM products WHERE id = $1', [id]);
+        
+        if (currentProduct.rows.length === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        
+        // Hapus file lama jika ada
+        const oldAttachment = currentProduct.rows[0].material_attachment;
+        if (oldAttachment) {
+            const oldFilePath = path.join(__dirname, '../public', oldAttachment);
+            if (fs.existsSync(oldFilePath)) {
+                fs.unlinkSync(oldFilePath);
+            }
+        }
+        
+        // Path relatif untuk disimpan di database
+        const relativePath = `/uploads/materials/${req.file.filename}`;
+        
+        // Update database dengan path file baru
+        const result = await pool.query(
+            'UPDATE products SET material_attachment = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+            [relativePath, id]
+        );
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error uploading material:', err);
+        res.status(500).json({ error: 'Internal server error', details: err.message });
+    }
+});
+
+// Upload contract attachment
+router.post('/:id/contract', authenticateToken, uploadContract.single('contract'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Jika tidak ada file yang diupload
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        
+        // Dapatkan produk saat ini untuk menghapus file lama jika ada
+        const currentProduct = await pool.query('SELECT contract_attachment FROM products WHERE id = $1', [id]);
+        
+        if (currentProduct.rows.length === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        
+        // Hapus file lama jika ada
+        const oldAttachment = currentProduct.rows[0].contract_attachment;
+        if (oldAttachment) {
+            const oldFilePath = path.join(__dirname, '../public', oldAttachment);
+            if (fs.existsSync(oldFilePath)) {
+                fs.unlinkSync(oldFilePath);
+            }
+        }
+        
+        // Path relatif untuk disimpan di database
+        const relativePath = `/uploads/contracts/${req.file.filename}`;
+        
+        // Update database dengan path file baru
+        const result = await pool.query(
+            'UPDATE products SET contract_attachment = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+            [relativePath, id]
+        );
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error uploading contract:', err);
+        res.status(500).json({ error: 'Internal server error', details: err.message });
+    }
+});
+
+// Delete material attachment
+router.delete('/:id/material', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Dapatkan produk saat ini
+        const currentProduct = await pool.query('SELECT material_attachment FROM products WHERE id = $1', [id]);
+        
+        if (currentProduct.rows.length === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        
+        // Hapus file jika ada
+        const attachment = currentProduct.rows[0].material_attachment;
+        if (attachment) {
+            const filePath = path.join(__dirname, '../public', attachment);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        
+        // Update database
+        await pool.query(
+            'UPDATE products SET material_attachment = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+            [id]
+        );
+        
+        res.json({ message: 'Material attachment deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting material attachment:', err);
+        res.status(500).json({ error: 'Internal server error', details: err.message });
+    }
+});
+
+// Delete contract attachment
+router.delete('/:id/contract', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Dapatkan produk saat ini
+        const currentProduct = await pool.query('SELECT contract_attachment FROM products WHERE id = $1', [id]);
+        
+        if (currentProduct.rows.length === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        
+        // Hapus file jika ada
+        const attachment = currentProduct.rows[0].contract_attachment;
+        if (attachment) {
+            const filePath = path.join(__dirname, '../public', attachment);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        
+        // Update database
+        await pool.query(
+            'UPDATE products SET contract_attachment = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+            [id]
+        );
+        
+        res.json({ message: 'Contract attachment deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting contract attachment:', err);
+        res.status(500).json({ error: 'Internal server error', details: err.message });
+    }
 });
 
 module.exports = router;

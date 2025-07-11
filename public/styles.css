@@ -164,21 +164,25 @@ body {
 }
 
 /* Main Content */
+/* Pastikan main-content tidak memiliki padding-top */
 .main-content {
     margin-left: 280px;
     min-height: 100vh;
     background: var(--bg-secondary);
     transition: margin-left 0.3s ease;
+    padding-top: 0 !important;
 }
 
 /* Header */
+/* Perbaikan untuk Header */
 .header {
     background: var(--bg-primary);
     border-bottom: 1px solid var(--gray-200);
-    padding: 1rem 2rem;
+    padding: 0.75rem 2rem; /* Kurangi padding */
     position: sticky;
     top: 0;
     z-index: 100;
+    margin-bottom: 0 !important;
 }
 
 .header-content {
@@ -315,84 +319,77 @@ body {
 }
 
 /* Dashboard Content */
+/* Perbaikan untuk Dashboard Content - menghilangkan gap besar di atas */
 .dashboard-content {
-    padding: 1.5rem;
-    height: calc(100vh - 80px);
-    overflow-y: auto;
+    padding: 1rem 1.5rem;
+    height: auto; /* Ubah dari calc(100vh - 80px) */
+    overflow-y: visible; /* Ubah dari auto */
+    margin-top: 0 !important;
 }
 
 /* Top Cards - 3 cards in first row */
-.top-cards {
+/* Perbaikan untuk Card Product Lifecycle */
+.top-cards, .second-cards {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
+    gap: 1.25rem;
     margin-bottom: 1.5rem;
 }
 
-/* Second Row - 2 cards */
+.top-cards {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
 .second-cards {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
-.dashboard-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-top: 20px;
-}
-.dashboard-card {
-  flex: 1 1 200px;
-  min-width: 200px;
-  max-width: 300px;
-  padding: 24px 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-
+/* Perbaikan untuk dashboard card */
 .dashboard-card {
     background: var(--bg-primary);
-    border-radius: var(--border-radius-lg);
+    border-radius: 16px;
     padding: 1.5rem;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     position: relative;
     overflow: hidden;
-    border: 1px solid var(--gray-200);
+    border: none;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Card Specific Colors for Lifecycle */
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Card Specific Colors - Menggunakan warna dari gambar */
 .card-total {
-    background: linear-gradient(135deg, #6B7280, #4B5563);
+    background: linear-gradient(135deg, #5F6673, #3D4452);
     color: white;
 }
 
 .card-introduction {
-    background: linear-gradient(135deg, #A05AFF, #9E58FF);
+    background: linear-gradient(135deg, #A05AFF, #8A3DFF);
     color: white;
 }
 
 .card-growth {
-    background: linear-gradient(135deg, #1BCFB4, #10B981);
+    background: linear-gradient(135deg, #1BCFB4, #0AB99F);
     color: white;
 }
 
 .card-maturity {
-    background: linear-gradient(135deg, #4BCBEB, #3B82F6);
+    background: linear-gradient(135deg, #4BCBEB, #2EAFD0);
     color: white;
 }
 
 .card-decline {
-    background: linear-gradient(135deg, #FE9496, #FF6B6B);
+    background: linear-gradient(135deg, #FE9496, #FF7B7D);
     color: white;
 }
 
+/* Perbaikan header card */
 .card-header {
     display: flex;
     justify-content: space-between;
@@ -401,33 +398,58 @@ body {
 }
 
 .card-header h3 {
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 1rem;
+    font-weight: 600;
     margin: 0;
-    opacity: 0.9;
+    letter-spacing: 0.3px;
 }
 
 .card-header i {
     font-size: 1.25rem;
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
+/* Perbaikan konten card */
 .card-content {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    flex-grow: 1;
+    justify-content: center;
 }
 
 .card-value {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 700;
+    margin-bottom: 0.5rem;
     line-height: 1;
 }
 
 .card-trend {
-    font-size: 0.75rem;
-    opacity: 0.8;
+    font-size: 0.875rem;
+    opacity: 0.9;
     font-weight: 500;
+}
+
+/* Responsivitas untuk layar kecil */
+@media (max-width: 768px) {
+    .top-cards, .second-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-card {
+        padding: 1.25rem;
+    }
+    
+    .card-value {
+        font-size: 2rem;
+    }
+}
+
+/* Responsivitas untuk layar medium */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .top-cards {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
 }
 
 /* Segmentasi Bisnis Section */
@@ -435,14 +457,19 @@ body {
     margin-bottom: 2rem;
 }
 
+/* Tambahkan section title styling yang lebih baik */
 .section-title {
     font-size: 1.25rem;
     font-weight: 600;
+    margin-bottom: 1rem;
     color: var(--text-primary);
-    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.section-title i {
+    color: var(--primary-color);
 }
 
 .segment-cards {
@@ -2266,4 +2293,138 @@ body {
     .transition-stats {
         grid-template-columns: 1fr;
     }
+}
+
+/* Styling untuk file input */
+.file-input-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.file-input {
+    position: absolute;
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.file-input-display {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    background-color: #f9f9f9;
+    margin-bottom: 8px;
+}
+
+.file-input-display span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
+.file-input-display button {
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+/* Tambahkan atau pastikan CSS ini ada */
+.btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.attachment-preview {
+    margin-top: 5px;
+    min-height: 20px;
+}
+
+/* Styling untuk attachment di product card */
+.product-attachments {
+    margin-top: 15px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding-top: 10px;
+}
+
+.attachment-link {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+    color: #4361ee;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.attachment-link i {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.attachment-link:hover {
+    text-decoration: underline;
+}
+
+.no-attachment {
+    color: #999;
+    font-style: italic;
+    font-size: 13px;
+}
+
+/* Styling untuk attachment di product card */
+.product-attachments {
+    margin-top: 15px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding-top: 10px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.attachment-link {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    color: #4361ee;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    margin-bottom: 5px;
+    background-color: rgba(67, 97, 238, 0.05);
+}
+
+.attachment-link i {
+    margin-right: 8px;
+    font-size: 18px;
+    color: #4361ee;
+}
+
+.attachment-link:hover {
+    background-color: rgba(67, 97, 238, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.no-attachment {
+    color: #999;
+    font-style: italic;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+}
+
+.no-attachment i {
+    margin-right: 8px;
+    font-size: 16px;
+    color: #999;
 }
