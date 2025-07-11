@@ -15,7 +15,29 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get product by ID
+// Get all lifecycle history - MOVED BEFORE /:id ROUTE
+router.get('/lifecycle-history', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT lh.*, p.name as product_name, p.segment, p.category FROM lifecycle_history lh ' +
+      'JOIN products p ON lh.product_id = p.id ' +
+      'ORDER BY lh.change_date DESC'
+    );
+    
+    // Pastikan format tanggal konsisten
+    const formattedData = result.rows.map(row => ({
+      ...row,
+      change_date: new Date(row.change_date).toISOString()
+    }));
+    
+    res.json(formattedData);
+  } catch (err) {
+    console.error('Error fetching lifecycle history:', err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// Get product by ID - MOVED AFTER MORE SPECIFIC ROUTES
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -115,6 +137,28 @@ router.get('/:id/history', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all lifecycle history
+router.get('/lifecycle-history', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT lh.*, p.name as product_name, p.segment, p.category FROM lifecycle_history lh ' +
+      'JOIN products p ON lh.product_id = p.id ' +
+      'ORDER BY lh.change_date DESC'
+    );
+    
+    // Pastikan format tanggal konsisten
+    const formattedData = result.rows.map(row => ({
+      ...row,
+      change_date: new Date(row.change_date).toISOString()
+    }));
+    
+    res.json(formattedData);
+  } catch (err) {
+    console.error('Error fetching lifecycle history:', err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 

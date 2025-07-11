@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet'); // Add this line
 require('dotenv').config();
 
 const productRoutes = require('./routes/products');
@@ -24,6 +25,20 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Add this before other middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'", "'unsafe-eval'"], // Added unsafe-eval
+      styleSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com", "'unsafe-inline'"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "https://via.placeholder.com", "data:"],
+      connectSrc: ["'self'"]
+    },
+  },
+}));
 
 // Routes
 app.use('/api/auth', authRoutes);

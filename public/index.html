@@ -9,10 +9,12 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- Tambahkan setelah Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-sankey"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="lifecycle-analysis/product-launch-timeline.js"></script>
+    <!-- Tambahkan di bagian yang diinginkan -->
+    <canvas id="lifecyclePieChart" width="400" height="400"></canvas>
     <script type="module">
         // Preload lifecycle analysis modules
         import('./lifecycle-analysis/loader.js');
