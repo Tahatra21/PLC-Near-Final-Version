@@ -97,11 +97,13 @@ class ProductLifecycleManager {
             });
         }
         
-        // Filters
+        // Product search and filter
         const lifecycleFilter = document.getElementById('lifecycleFilter');
+        const segmentFilter = document.getElementById('segmentFilter');
         const searchInput = document.getElementById('searchInput');
-        if (lifecycleFilter) lifecycleFilter.addEventListener('change', () => this.filterProducts());
-        if (searchInput) searchInput.addEventListener('input', () => this.filterProducts());
+        if (lifecycleFilter) lifecycleFilter.addEventListener('change', () => this.searchProducts());
+        if (segmentFilter) segmentFilter.addEventListener('change', () => this.searchProducts());
+        if (searchInput) searchInput.addEventListener('input', this.debounce(() => this.searchProducts(), 300));
         
         // User management events
         const addUserBtn = document.getElementById('addUserBtn');
@@ -227,22 +229,22 @@ class ProductLifecycleManager {
     // Product Catalog Functions
     loadProductCatalog() {
         console.log('Loading Product Catalog...');
-        this.loadProducts();
+        this.loadProducts(); // Tetap menggunakan loadProducts untuk memuat semua produk awal
         this.setupProductFilters();
         this.showNotification('Product catalog loaded', 'info');
     }
 
     setupProductFilters() {
-        // Setup additional product-specific filters
-        const productSearch = document.getElementById('productSearch');
-        if (productSearch) {
-            productSearch.addEventListener('input', (e) => {
-                this.filterProductsBySearch(e.target.value);
-            });
-        }
+        // Tidak perlu menambahkan event listener di sini karena sudah ditangani di bindEvents
+        console.log('Product filters setup complete');
     }
 
     filterProductsBySearch(searchTerm) {
+        if (!searchTerm) {
+            this.renderProducts(this.products);
+            return;
+        }
+        
         const filtered = this.products.filter(product => 
             product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -755,8 +757,17 @@ class ProductLifecycleManager {
         }
     }
 
-    hideLoading() {
-        // Loading will be replaced by actual content
+    hideLoading(isError = false) {
+        // If there's an error, the error message is already displayed
+        if (isError) return;
+        
+        // If no products found and no error, show the "No products found" message
+        if (this.products.length === 0) {
+            const grid = document.getElementById('productsGrid');
+            if (grid) {
+                grid.innerHTML = '<div class="loading">No products found</div>';
+            }
+        }
     }
 
     renderProducts(productsToRender = this.products) {
@@ -898,16 +909,72 @@ class ProductLifecycleManager {
         }, stepDuration);
     }
 
+    // Fungsi debounce untuk mengurangi jumlah request
+    debounce(func, delay) {
+        let timeout;
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+    
+    // Fungsi untuk mencari produk langsung ke database
+    async searchProducts() {
+        try {
+            this.showLoading();
+            const token = localStorage.getItem('token');
+            const lifecycleFilter = document.getElementById('lifecycleFilter')?.value || '';
+            const segmentFilter = document.getElementById('segmentFilter')?.value || '';
+            const searchTerm = document.getElementById('searchInput')?.value || '';
+            let url = '/api/products/search';
+            const params = [];
+            if (searchTerm) params.push(`term=${encodeURIComponent(searchTerm)}`);
+            if (lifecycleFilter) params.push(`lifecycle=${encodeURIComponent(lifecycleFilter)}`);
+            if (segmentFilter) params.push(`segment=${encodeURIComponent(segmentFilter)}`);
+            if (params.length > 0) url += '?' + params.join('&');
+            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || errorData.details || 'Failed to search products');
+            }
+            const data = await response.json();
+            this.products = data;
+            this.renderProducts(this.products);
+            this.updateStats();
+            this.hideLoading();
+        } catch (error) {
+            this.showNotification('Failed to search products: ' + error.message, 'error');
+            const grid = document.getElementById('productsGrid');
+            if (grid) {
+                grid.innerHTML = `<div class=\"loading error\">Error: ${error.message}</div>`;
+            }
+            this.hideLoading(true);
+        }
+    }
+
     filterProducts() {
         const lifecycleFilter = document.getElementById('lifecycleFilter').value;
+        const segmentFilter = document.getElementById('segmentFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
+        console.log('Filtering products:', { lifecycleFilter, segmentFilter, searchTerm });
+        console.log('Products before filter:', this.products.length);
 
         let filtered = this.products;
 
+        // Filter berdasarkan lifecycle stage
         if (lifecycleFilter) {
             filtered = filtered.filter(product => product.lifecycle_stage === lifecycleFilter);
         }
 
+        // Filter berdasarkan segment
+        if (segmentFilter) {
+            filtered = filtered.filter(product => product.segment === segmentFilter);
+        }
+
+        // Filter berdasarkan search term
         if (searchTerm) {
             filtered = filtered.filter(product => 
                 product.name.toLowerCase().includes(searchTerm) ||
@@ -916,7 +983,8 @@ class ProductLifecycleManager {
                 (product.segment && product.segment.toLowerCase().includes(searchTerm))
             );
         }
-
+        
+        console.log('Products after filter:', filtered.length);
         this.renderProducts(filtered);
     }
 
